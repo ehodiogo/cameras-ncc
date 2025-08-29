@@ -1,0 +1,4 @@
+<h1>{{ camera.nome }}</h1>
+<p>Endereço: {{ camera.endereco }}</p>
+
+<img src="{% url 'camera_feed' camera.id %}" alt="Streaming da {{ camera.nome }}">

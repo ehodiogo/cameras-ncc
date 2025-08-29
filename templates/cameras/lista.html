@@ -1,0 +1,23 @@
+<h1>Lista de Câmeras</h1>
+
+<ul>
+  {% for cam in cameras %}
+    <li>
+      <a href="{% url 'detalhe_camera' cam.pk %}">
+        {{ cam.nome }} - {{ cam.endereco }}
+      </a>
+    </li>
+  {% endfor %}
+</ul>
+
+<p>
+  <a href="{% url 'painel_cameras' %}"
+     style="display:inline-block;
+            padding:10px 15px;
+            background:#007bff;
+            color:white;
+            border-radius:5px;
+            text-decoration:none;">
+     Ver todas
+  </a>
+</p>

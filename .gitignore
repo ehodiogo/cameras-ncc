@@ -3,3 +3,6 @@
 *.idea
 *.xml
 .idea
+.idea/
+/.idea/
+./idea
