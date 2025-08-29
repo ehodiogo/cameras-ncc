@@ -32,7 +32,7 @@ def camera_feed(request, pk):
             frame2_gray = cv2.GaussianBlur(frame2_gray, (15, 15), 0)
 
             diff = cv2.absdiff(frame1_gray, frame2_gray)
-            _, thresh = cv2.threshold(diff, 30, 255, cv2.THRESH_BINARY)
+            _, thresh = cv2.threshold(diff, 38, 255, cv2.THRESH_BINARY)
             thresh = cv2.dilate(thresh, None, iterations=2)
 
             contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
