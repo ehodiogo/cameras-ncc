@@ -1,0 +1,29 @@
+{% load custom_filters %}
+
+<h1>Gravações</h1>
+
+<form method="get">
+    Ano: <input type="number" name="ano" value="{{ request.GET.ano }}">
+    Mês: <input type="number" name="mes" value="{{ request.GET.mes }}">
+    Dia: <input type="number" name="dia" value="{{ request.GET.dia }}">
+    <label><input type="checkbox" name="hoje" value="1" {% if request.GET.hoje %}checked{% endif %}> Hoje</label>
+    <button type="submit">Filtrar</button>
+</form>
+
+<ul>
+    {% for arq in arquivos %}
+        <li>
+            {% if arq.nome|endswith:".avi" %}
+                <video width="320" height="240" controls>
+                    <source src="/{{ arq.caminho }}" type="video/avi">
+                    Seu navegador não suporta vídeo.
+                </video>
+            {% else %}
+                <img src="/{{ arq.caminho }}" width="320">
+            {% endif %}
+            <p>{{ arq.nome }}</p>
+        </li>
+    {% empty %}
+        <li>Nenhuma gravação encontrada</li>
+    {% endfor %}
+</ul>
