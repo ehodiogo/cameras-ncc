@@ -5,6 +5,9 @@ from django.http import StreamingHttpResponse
 from .models import Camera
 import os
 from datetime import datetime
+from django.conf import settings
+
+MOTION_FOLDER = os.path.join(settings.MEDIA_ROOT, "motion")
 
 def camera_feed(request, pk):
     camera = get_object_or_404(Camera, pk=pk)
@@ -23,6 +26,9 @@ def camera_feed(request, pk):
         out = None
         start_time = None
 
+        VIDEO_WIDTH, VIDEO_HEIGHT = 1024, 768
+        VIDEO_FPS = 15.0
+
         while True:
             ret, frame2 = cap.read()
             if not ret:
@@ -34,35 +40,39 @@ def camera_feed(request, pk):
             diff = cv2.absdiff(frame1_gray, frame2_gray)
             _, thresh = cv2.threshold(diff, 38, 255, cv2.THRESH_BINARY)
             thresh = cv2.dilate(thresh, None, iterations=2)
-
             contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
             movement_detected = any(cv2.contourArea(c) >= 200 for c in contours)
 
             if movement_detected and not recording:
                 recording = True
                 start_time = time.time()
+                movement_time = time.time()
+                photo_taken = False
 
                 now = datetime.now()
-                folder_path = f"motion/{now.year}/{now.month:02}/{now.day:02}"
+                folder_path = os.path.join(MOTION_FOLDER, f"{now.year}", f"{now.month:02}", f"{now.day:02}")
                 os.makedirs(folder_path, exist_ok=True)
 
                 timestamp = now.strftime("%H-%M-%S")
-
-                foto_path = f"{folder_path}/{camera_name}_{timestamp}.jpg"
-                cv2.imwrite(foto_path, frame2)
-
-                height, width, _ = frame2.shape
-                video_path = f"{folder_path}/{camera_name}_{timestamp}.avi"
-                fourcc = cv2.VideoWriter_fourcc(*'XVID')
-                out = cv2.VideoWriter(video_path, fourcc, 20.0, (width, height))
+                video_path = os.path.join(folder_path, f"{camera_name}_{timestamp}.mp4")
+                fourcc = cv2.VideoWriter_fourcc(*'mp4v') # ta gravando em mp4
+                out = cv2.VideoWriter(video_path, fourcc, VIDEO_FPS, (VIDEO_WIDTH, VIDEO_HEIGHT))
 
             if recording:
-                out.write(frame2)
-                if time.time() - start_time >= 20:
+                frame_resized = cv2.resize(frame2, (VIDEO_WIDTH, VIDEO_HEIGHT))
+                out.write(frame_resized)
+
+                # tira a foto 2 segundos depois do movimento
+                if not photo_taken and time.time() - movement_time >= 1:
+                    foto_path = os.path.join(folder_path, f"{camera_name}_{timestamp}.jpg")
+                    cv2.imwrite(foto_path, frame2)
+                    photo_taken = True
+
+                if time.time() - start_time >= 20:  # grava 20s
                     recording = False
                     out.release()
                     out = None
+                    photo_taken = False
 
             frame1_gray = frame2_gray
             ret, buffer = cv2.imencode('.jpg', frame2)
@@ -72,7 +82,6 @@ def camera_feed(request, pk):
 
     return StreamingHttpResponse(gen_frames(),
                                  content_type='multipart/x-mixed-replace; boundary=frame')
-
 
 def lista_cameras(request):
     cameras = Camera.objects.all()
@@ -85,8 +94,6 @@ def detalhe_camera(request, pk):
 def painel_cameras(request):
     cameras = Camera.objects.all()
     return render(request, "cameras/painel.html", {"cameras": cameras})
-
-MOTION_FOLDER = "motion"
 
 def listar_gravacoes(request):
     ano = request.GET.get("ano")
@@ -115,11 +122,14 @@ def listar_gravacoes(request):
                 dia_path = os.path.join(mes_path, f"{int(d):02}")
                 if not os.path.exists(dia_path):
                     continue
-                for arquivo in sorted(os.listdir(dia_path)):
-                    if arquivo.endswith(".avi") or arquivo.endswith(".jpg"):
-                        arquivos.append({
-                            "nome": arquivo,
-                            "caminho": os.path.join(dia_path, arquivo).replace("\\", "/")
-                        })
 
-    return render(request, "cameras/gravacoes.html", {"arquivos": arquivos})
+                arquivos_dia = [f for f in os.listdir(dia_path) if f.endswith(".mp4") or f.endswith(".jpg")]
+                arquivos_dia.sort(key=lambda x: x.split('_')[-1].split('.')[0])
+
+                for arquivo in arquivos_dia:
+                    arquivos.append({
+                        "nome": arquivo,
+                        "caminho": f"motion/{a}/{int(m):02}/{int(d):02}/{arquivo}"
+                    })
+
+    return render(request, "cameras/gravacoes.html", {"arquivos": arquivos, "MEDIA_URL": settings.MEDIA_URL})
