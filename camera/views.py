@@ -6,6 +6,7 @@ from .models import Camera
 import os
 from datetime import datetime
 from django.conf import settings
+from .funcs import verificar_espaco
 
 MOTION_FOLDER = os.path.join(settings.MEDIA_ROOT, "motion")
 
@@ -67,12 +68,14 @@ def camera_feed(request, pk):
                     foto_path = os.path.join(folder_path, f"{camera_name}_{timestamp}.jpg")
                     cv2.imwrite(foto_path, frame2)
                     photo_taken = True
+                    verificar_espaco()
 
                 if time.time() - start_time >= 20:  # grava 20s
                     recording = False
                     out.release()
                     out = None
                     photo_taken = False
+                    verificar_espaco()
 
             frame1_gray = frame2_gray
             ret, buffer = cv2.imencode('.jpg', frame2)
