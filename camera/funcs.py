@@ -1,8 +1,7 @@
 import os
 from django.conf import settings
 
-# Limite máximo em MB
-MAX_STORAGE_MB = 180  # exemplo: 1GB
+MAX_STORAGE_MB = 500000  # 500gb
 
 MOTION_FOLDER = os.path.join(settings.MEDIA_ROOT, "motion")
 
