@@ -1,41 +1,37 @@
 import cv2
-import time
 from django.shortcuts import render, get_object_or_404
 from django.http import StreamingHttpResponse
 from .models import Camera
 import os
 from datetime import datetime
+import time
 from django.conf import settings
 from .funcs import verificar_espaco
 
 MOTION_FOLDER = os.path.join(settings.MEDIA_ROOT, "motion")
 
+def open_camera(rtsp_url, nome):
+    cap = cv2.VideoCapture(rtsp_url + '?tcp', cv2.CAP_FFMPEG)
+    cap.set(cv2.CAP_PROP_OPEN_TIMEOUT_MSEC, 30000)
+    cap.set(cv2.CAP_PROP_BUFFERSIZE, 18)
+    ret, frame = cap.read()
+    if ret:
+        print(f"Câmera {nome} conectada com sucesso!")
+        return cap, frame
+    else:
+        print(f"Câmera {nome} offline.")
+        cap.release()
+        return None, None
 
-def open_camera(rtsp_url, nome, retries=5, retry_delay=5):
-    attempt = 0
-    while attempt < retries:
-        cap = cv2.VideoCapture(rtsp_url + '?tcp', cv2.CAP_FFMPEG)
-        cap.set(cv2.CAP_PROP_OPEN_TIMEOUT_MSEC, 120000)
-        cap.set(cv2.CAP_PROP_BUFFERSIZE, 18)
-
-        ret, frame = cap.read()
-        if ret:
-            print(f"Câmera {nome} conectada com sucesso!")
-            return cap, frame
-        else:
-            print(f"Câmera {nome} offline, tentando novamente em {retry_delay}s...")
-            cap.release()
-            attempt += 1
-            time.sleep(retry_delay)
-    print(f"Não foi possível conectar à câmera {nome}.")
-    return None, None
 
 def gen_frames(rtsp_url, camera_name):
     VIDEO_WIDTH, VIDEO_HEIGHT = 1024, 768
     VIDEO_FPS = 15.0
+
     cap, frame1 = open_camera(rtsp_url, camera_name)
     if cap is None:
-        return  # Sai do generator se não conseguiu conectar
+        yield None  # sinaliza câmera OFF
+        return
 
     frame1_gray = cv2.cvtColor(frame1, cv2.COLOR_BGR2GRAY)
     frame1_gray = cv2.GaussianBlur(frame1_gray, (15, 15), 0)
@@ -49,14 +45,8 @@ def gen_frames(rtsp_url, camera_name):
     while True:
         ret, frame2 = cap.read()
         if not ret:
-            print(f"Câmera {camera_name} perdeu conexão. Tentando reconectar...")
-            cap.release()
-            cap, frame2 = open_camera(rtsp_url, camera_name)
-            if cap is None:
-                return
-            frame1_gray = cv2.cvtColor(frame2, cv2.COLOR_BGR2GRAY)
-            frame1_gray = cv2.GaussianBlur(frame1_gray, (15, 15), 0)
-            continue
+            yield None
+            return
 
         frame2_gray = cv2.cvtColor(frame2, cv2.COLOR_BGR2GRAY)
         frame2_gray = cv2.GaussianBlur(frame2_gray, (15, 15), 0)
@@ -106,24 +96,41 @@ def gen_frames(rtsp_url, camera_name):
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
 
+
 def camera_feed(request, pk):
     camera = get_object_or_404(Camera, pk=pk)
     rtsp_url = camera.rtsp_url
     camera_name = camera.nome.replace(" ", "_")
-    return StreamingHttpResponse(gen_frames(rtsp_url, camera_name),
+
+    def generator():
+        for frame in gen_frames(rtsp_url, camera_name):
+            if frame is None:
+                placeholder_path = os.path.join(settings.STATIC_ROOT, "camera_off.jpg")
+                placeholder = cv2.imread(placeholder_path)
+                ret, buffer = cv2.imencode('.jpg', placeholder)
+                frame_bytes = buffer.tobytes()
+                yield (b'--frame\r\n'
+                       b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+            else:
+                yield frame
+
+    return StreamingHttpResponse(generator(),
                                  content_type='multipart/x-mixed-replace; boundary=frame')
 
 def lista_cameras(request):
     cameras = Camera.objects.all()
     return render(request, "cameras/lista.html", {"cameras": cameras})
 
+
 def detalhe_camera(request, pk):
     camera = get_object_or_404(Camera, pk=pk)
     return render(request, "cameras/detalhe.html", {"camera": camera})
 
+
 def painel_cameras(request):
     cameras = Camera.objects.all()
     return render(request, "cameras/painel.html", {"cameras": cameras})
+
 
 def listar_gravacoes(request):
     ano = request.GET.get("ano")
