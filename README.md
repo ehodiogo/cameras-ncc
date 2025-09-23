@@ -48,7 +48,7 @@ cameras-ncc/
 
 1. Clone o repositório:
 ```bash
-git clone https://github.com/seu-usuario/cameras-ncc.git
+git clone https://github.com/ehodiogo/cameras-ncc.git
 cd cameras-ncc
 ```
 
