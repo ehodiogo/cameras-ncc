@@ -7,8 +7,11 @@ from datetime import datetime
 import time
 from django.conf import settings
 from .funcs import verificar_espaco
+from ultralytics import YOLO
 
 MOTION_FOLDER = os.path.join(settings.MEDIA_ROOT, "motion")
+yolo_model = YOLO("yolov8n.pt")
+PERSON_CLASS_ID = 0
 
 def open_camera(rtsp_url, nome):
     cap = cv2.VideoCapture(rtsp_url + '?tcp', cv2.CAP_FFMPEG)
@@ -47,6 +50,10 @@ def gen_frames(rtsp_url, camera_name):
         if not ret:
             yield None
             return
+
+        results = yolo_model(frame2, classes=[PERSON_CLASS_ID])
+        if results and len(results[0].boxes) > 0:
+            print(f"[{camera_name}] Pessoa detectada!")
 
         frame2_gray = cv2.cvtColor(frame2, cv2.COLOR_BGR2GRAY)
         frame2_gray = cv2.GaussianBlur(frame2_gray, (15, 15), 0)
