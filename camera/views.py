@@ -51,9 +51,24 @@ def gen_frames(rtsp_url, camera_name):
             yield None
             return
 
-        results = yolo_model(frame2, classes=[PERSON_CLASS_ID])
+        results = yolo_model(frame2, classes=[PERSON_CLASS_ID], verbose=False)
         if results and len(results[0].boxes) > 0:
             print(f"[{camera_name}] Pessoa detectada!")
+
+            for box in results[0].boxes:
+                x1, y1, x2, y2 = map(int, box.xyxy[0])
+
+                cv2.rectangle(frame2, (x1, y1), (x2, y2), (0, 255, 0), 2)
+
+                cv2.putText(
+                    frame2,
+                    "Pessoa",
+                    (x1, y1 - 10),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.9,
+                    (0, 255, 0),
+                    2
+                )
 
         frame2_gray = cv2.cvtColor(frame2, cv2.COLOR_BGR2GRAY)
         frame2_gray = cv2.GaussianBlur(frame2_gray, (15, 15), 0)
