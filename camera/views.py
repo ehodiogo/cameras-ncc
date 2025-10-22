@@ -117,11 +117,6 @@ def camera_feed(request, pk):
     return StreamingHttpResponse(generator(),
                                  content_type='multipart/x-mixed-replace; boundary=frame')
 
-def lista_cameras(request):
-    cameras = Camera.objects.all()
-    return render(request, "cameras/lista.html", {"cameras": cameras})
-
-
 def detalhe_camera(request, pk):
     camera = get_object_or_404(Camera, pk=pk)
     return render(request, "cameras/detalhe.html", {"camera": camera})

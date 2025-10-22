@@ -40,6 +40,25 @@
   </style>
 </head>
 <body>
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+  <div class="container">
+    <a class="navbar-brand" href="{% url 'painel_cameras' %}">NCC Câmeras</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item">
+          <a class="nav-link active" aria-current="page" href="{% url 'painel_cameras' %}">Dashboard de Câmeras</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'listar_gravacoes' %}">Gravações</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
 <div class="container my-5">
   <h1 class="text-center mb-5">📡 Painel de Câmeras</h1>
   <div class="row g-4">
@@ -73,6 +92,9 @@
 </div>
 
 <script>
+const ZOOM_STEP = 0.2;
+const MAX_ZOOM = 3.0;
+
 function showPlaceholder(img) {
     img.style.display = 'none';
     img.previousElementSibling.style.display = 'flex';
@@ -94,7 +116,9 @@ function refreshCamera(cameraId) {
 function zoomIn(cameraId) {
     const img = document.querySelector(`#camera-${cameraId} img`);
     let scale = parseFloat(img.dataset.scale || 1);
-    scale += 0.2;
+
+    scale = Math.min(scale + ZOOM_STEP, MAX_ZOOM);
+
     img.dataset.scale = scale;
     img.dataset.translateX = img.dataset.translateX || 0;
     img.dataset.translateY = img.dataset.translateY || 0;
@@ -103,9 +127,11 @@ function zoomIn(cameraId) {
 
 function zoomOut(cameraId) {
     const img = document.querySelector(`#camera-${cameraId} img`);
+
     img.dataset.scale = 1;
     img.dataset.translateX = 0;
     img.dataset.translateY = 0;
+
     updateTransform(img);
 }
 
@@ -119,22 +145,35 @@ function updateTransform(img) {
 document.querySelectorAll('.video-wrapper').forEach(wrapper => {
     const img = wrapper.querySelector('img');
     let isDragging = false;
-    let startX, startY, currentX = 0, currentY = 0;
+    let startX, startY;
+    let currentX = 0, currentY = 0;
 
     wrapper.addEventListener('mousedown', e => {
         if ((parseFloat(img.dataset.scale) || 1) <= 1) return;
+
         isDragging = true;
+        wrapper.style.cursor = 'grabbing';
+
+        currentX = parseFloat(img.dataset.translateX || 0);
+        currentY = parseFloat(img.dataset.translateY || 0);
+
         startX = e.clientX - currentX;
         startY = e.clientY - currentY;
-        wrapper.style.cursor = 'grabbing';
     });
 
     wrapper.addEventListener('mousemove', e => {
         if (!isDragging) return;
-        currentX = e.clientX - startX;
-        currentY = e.clientY - startY;
-        img.dataset.translateX = currentX;
-        img.dataset.translateY = currentY;
+
+        // Calcula a nova translação
+        let newX = e.clientX - startX;
+        let newY = e.clientY - startY;
+
+        img.dataset.translateX = newX;
+        img.dataset.translateY = newY;
+
+        currentX = newX;
+        currentY = newY;
+
         updateTransform(img);
     });
 
@@ -152,4 +191,3 @@ document.querySelectorAll('.video-wrapper').forEach(wrapper => {
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
-</html>
