@@ -122,8 +122,7 @@ WantedBy=multi-user.target
 ```
 
 Reinicie o `daemon` e ative a função para rodar
-```
-bash
+```bash
 sudo systemctl daemon-reload
 sudo systemctl enable monitor_cameras
 sudo systemctl start monitor_cameras
