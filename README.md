@@ -96,6 +96,44 @@ VIDEO_HEIGHT = 480
 VIDEO_FPS = 20
 ```
 
+No `systemd` do servidor `cameras`:
+
+```bash
+su
+sudo nano /etc/systemd/system/monitor_cameras.service
+```
+
+Cole o seguinte script no service:
+```
+[Unit]
+Description=Monitoramento das câmeras do NCC via serviço de sistema
+After=network.target
+
+[Service]
+WorkingDirectory=/caminho/para/seu/projeto
+ExecStart=/home/cameras/cameras-ncc/venv/bin/python /home/cameras/cameras-ncc/monitor_cameras.py
+Restart=always
+RestartSec=5
+User=www-data
+Environment="DJANGO_SETTINGS_MODULE=ncc.settings"
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Reinicie o `daemon` e ative a função para rodar
+```
+bash
+sudo systemctl daemon-reload
+sudo systemctl enable monitor_cameras
+sudo systemctl start monitor_cameras
+sudo systemctl status monitor_cameras
+
+# CASO QUEIRA VER OS LOGS EM TEMPO REAL
+
+sudo journalctl -u monitor_cameras.service
+```
+
 ---
 
 ## 🖼 Tela do Painel
