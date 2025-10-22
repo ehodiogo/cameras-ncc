@@ -9,7 +9,7 @@ urlpatterns = [
     path('cameras/', lista_cameras, name="cameras"),
     path('cameras/<int:pk>/', detalhe_camera, name='detalhe_camera'),
     path('camera/<int:pk>/feed', camera_feed, name='camera_feed'),
-    path('painel/', painel_cameras, name='painel_cameras'),
+    path('', painel_cameras, name='painel_cameras'),
     path('gravacoes/', listar_gravacoes, name='listar_gravacoes'),
 ]
 if settings.DEBUG:
