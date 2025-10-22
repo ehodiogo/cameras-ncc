@@ -79,7 +79,7 @@ python manage.py runserver
 
 ---
 
-## ⚙ Configuração
+## ⚙ Configuração Docker
 
 No `settings.py`:
 
@@ -96,6 +96,10 @@ VIDEO_HEIGHT = 480
 VIDEO_FPS = 20
 ```
 
+---
+
+## ⚙ Configuração Tarefa Automática do Servidor
+
 No `systemd` do servidor `cameras`:
 
 ```bash
@@ -110,11 +114,11 @@ Description=Monitoramento das câmeras do NCC via serviço de sistema
 After=network.target
 
 [Service]
-WorkingDirectory=/home/cameras/cameras-ncc
 ExecStart=/home/cameras/cameras-ncc/venv/bin/python /home/cameras/cameras-ncc/monitor_cameras.py
+WorkingDirectory=/home/cameras/cameras-ncc
 Restart=always
 RestartSec=5
-User=www-data
+User=cameras
 Environment="DJANGO_SETTINGS_MODULE=ncc.settings"
 
 [Install]
@@ -123,6 +127,9 @@ WantedBy=multi-user.target
 
 Reinicie o `daemon` e ative a função para rodar
 ```bash
+sudo chown -R cameras:cameras /home/cameras/cameras-ncc
+sudo chmod -R 755 /home/cameras/cameras-ncc
+
 sudo systemctl daemon-reload
 sudo systemctl enable monitor_cameras
 sudo systemctl start monitor_cameras
@@ -130,7 +137,7 @@ sudo systemctl status monitor_cameras
 
 # CASO QUEIRA VER OS LOGS EM TEMPO REAL
 
-sudo journalctl -u monitor_cameras.service
+sudo journalctl -u monitor_cameras.service -f
 ```
 
 ---
@@ -148,7 +155,7 @@ sudo journalctl -u monitor_cameras.service
 ## ⬇ Download
 
 Baixe o projeto como ZIP diretamente do GitHub:  
-[📥 Download cameras-ncc.zip](https://github.com/seu-usuario/cameras-ncc/archive/refs/heads/main.zip)
+[📥 Download cameras-ncc.zip](https://github.com/ehodiogo/cameras-ncc/archive/refs/heads/main.zip)
 
 ---
 
