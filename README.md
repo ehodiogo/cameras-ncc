@@ -110,7 +110,7 @@ Description=Monitoramento das câmeras do NCC via serviço de sistema
 After=network.target
 
 [Service]
-WorkingDirectory=/caminho/para/seu/projeto
+WorkingDirectory=/home/cameras/cameras-ncc
 ExecStart=/home/cameras/cameras-ncc/venv/bin/python /home/cameras/cameras-ncc/monitor_cameras.py
 Restart=always
 RestartSec=5
