@@ -26,7 +26,7 @@ def open_camera(rtsp_url, nome):
 
 def gen_frames(rtsp_url, camera_name):
     VIDEO_WIDTH, VIDEO_HEIGHT = 1024, 768
-    VIDEO_FPS = 15.0
+    VIDEO_FPS = 60
 
     cap, frame1 = open_camera(rtsp_url, camera_name)
     if cap is None:
