@@ -8,3 +8,5 @@
 ./idea
 /motion/
 /media/
+mediamtx.yml
+*.pyc

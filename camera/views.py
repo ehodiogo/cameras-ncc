@@ -7,11 +7,13 @@ from datetime import datetime
 import time
 from django.conf import settings
 from .funcs import verificar_espaco
+import subprocess
+import numpy as np
 
 MOTION_FOLDER = os.path.join(settings.MEDIA_ROOT, "motion")
 
 def open_camera(rtsp_url, nome):
-    cap = cv2.VideoCapture(rtsp_url + '?tcp', cv2.CAP_FFMPEG)
+    cap = cv2.VideoCapture(rtsp_url, cv2.CAP_FFMPEG)
     cap.set(cv2.CAP_PROP_OPEN_TIMEOUT_MSEC, 30000)
     cap.set(cv2.CAP_PROP_BUFFERSIZE, 18)
     ret, frame = cap.read()
@@ -26,7 +28,7 @@ def open_camera(rtsp_url, nome):
 
 def gen_frames(rtsp_url, camera_name):
     VIDEO_WIDTH, VIDEO_HEIGHT = 1024, 768
-    VIDEO_FPS = 15.0
+    VIDEO_FPS = 15
 
     cap, frame1 = open_camera(rtsp_url, camera_name)
     if cap is None:
@@ -37,7 +39,7 @@ def gen_frames(rtsp_url, camera_name):
     frame1_gray = cv2.GaussianBlur(frame1_gray, (15, 15), 0)
 
     recording = False
-    out = None
+    ffmpeg_proc = None
     start_time = None
     folder_path = None
     photo_taken = False
@@ -69,23 +71,47 @@ def gen_frames(rtsp_url, camera_name):
             os.makedirs(folder_path, exist_ok=True)
 
             video_path = os.path.join(folder_path, f"{camera_name}_{timestamp}.mp4")
-            fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-            out = cv2.VideoWriter(video_path, fourcc, VIDEO_FPS, (VIDEO_WIDTH, VIDEO_HEIGHT))
+
+            # Inicia FFmpeg para gravação
+            cmd = [
+                "ffmpeg",
+                "-y",
+                "-f", "rawvideo",
+                "-vcodec", "rawvideo",
+                "-pix_fmt", "bgr24",
+                "-s", f"{VIDEO_WIDTH}x{VIDEO_HEIGHT}",
+                "-r", str(VIDEO_FPS),
+                "-i", "-",  # input via stdin
+                "-c:v", "libx264",
+                "-preset", "ultrafast",
+                "-pix_fmt", "yuv420p",
+                video_path
+            ]
+            ffmpeg_proc = subprocess.Popen(cmd, stdin=subprocess.PIPE)
 
         if recording:
             frame_resized = cv2.resize(frame2, (VIDEO_WIDTH, VIDEO_HEIGHT))
-            out.write(frame_resized)
+            try:
+                ffmpeg_proc.stdin.write(frame_resized.tobytes())
+            except BrokenPipeError:
+                print(f"[{camera_name}] Erro ao escrever no FFmpeg")
+                recording = False
+                ffmpeg_proc = None
 
+            # Captura foto
             if not photo_taken and time.time() - movement_time >= 0.5:
                 foto_path = os.path.join(folder_path, f"{camera_name}_{timestamp}.jpg")
                 cv2.imwrite(foto_path, frame2)
                 photo_taken = True
                 verificar_espaco()
 
+            # Para gravação após 20s
             if time.time() - start_time >= 20:
                 recording = False
-                out.release()
-                out = None
+                if ffmpeg_proc:
+                    ffmpeg_proc.stdin.close()
+                    ffmpeg_proc.wait()
+                    ffmpeg_proc = None
                 photo_taken = False
                 verificar_espaco()
 
@@ -96,16 +122,15 @@ def gen_frames(rtsp_url, camera_name):
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
 
-
 def camera_feed(request, pk):
     camera = get_object_or_404(Camera, pk=pk)
-    rtsp_url = camera.rtsp_url
+    rtsp_url = camera.rtsp_sub_url
     camera_name = camera.nome.replace(" ", "_")
 
     def generator():
         for frame in gen_frames(rtsp_url, camera_name):
             if frame is None:
-                placeholder_path = os.path.join(settings.STATIC_ROOT, "camera_off.jpg")
+                placeholder_path = os.path.join(settings.BASE_DIR, "static", "camera_off.jpg")
                 placeholder = cv2.imread(placeholder_path)
                 ret, buffer = cv2.imencode('.jpg', placeholder)
                 frame_bytes = buffer.tobytes()
@@ -164,4 +189,5 @@ def listar_gravacoes(request):
                         "caminho": f"motion/{a}/{int(m):02}/{int(d):02}/{arquivo}"
                     })
 
+    arquivos.sort(key=lambda x: x['nome'].split('_')[-1].split('.')[0], reverse=True)
     return render(request, "cameras/gravacoes.html", {"arquivos": arquivos, "MEDIA_URL": settings.MEDIA_URL})

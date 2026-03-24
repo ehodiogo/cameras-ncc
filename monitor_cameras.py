@@ -15,11 +15,11 @@ from camera.funcs import verificar_espaco
 MOTION_FOLDER = os.path.join(settings.MEDIA_ROOT, "motion")
 
 VIDEO_WIDTH, VIDEO_HEIGHT = 1024, 768
-VIDEO_FPS = 15.0
+VIDEO_FPS = 15
 
 
 def open_camera(rtsp_url, nome):
-    cap = cv2.VideoCapture(rtsp_url + '?tcp', cv2.CAP_FFMPEG)
+    cap = cv2.VideoCapture(rtsp_url, cv2.CAP_FFMPEG)
     cap.set(cv2.CAP_PROP_OPEN_TIMEOUT_MSEC, 30000)
     cap.set(cv2.CAP_PROP_BUFFERSIZE, 18)
     ret, frame = cap.read()
@@ -34,10 +34,10 @@ def open_camera(rtsp_url, nome):
 
 def monitorar_camera(camera):
     nome = camera.nome.replace(" ", "_")
-    rtsp = camera.rtsp_url
+    rtsp_url = f"rtsp://172.17.0.1:8554/cam{camera.id}"
 
     while True:
-        cap, frame1 = open_camera(rtsp, nome)
+        cap, frame1 = open_camera(rtsp_url, nome)
         if cap is None:
             time.sleep(10)
             continue
@@ -77,7 +77,7 @@ def monitorar_camera(camera):
                 folder_path = os.path.join(MOTION_FOLDER, f"{now.year}", f"{now.month:02}", f"{now.day:02}")
                 os.makedirs(folder_path, exist_ok=True)
                 video_path = os.path.join(folder_path, f"{nome}_{timestamp}.mp4")
-                fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+                fourcc = cv2.VideoWriter_fourcc(*'MP4V')
                 out = cv2.VideoWriter(video_path, fourcc, VIDEO_FPS, (VIDEO_WIDTH, VIDEO_HEIGHT))
 
             if recording:

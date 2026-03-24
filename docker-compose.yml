@@ -8,4 +8,19 @@ services:
     volumes:
       - .:/app
       - ./media:/app/media
-    command: python manage.py runserver 0.0.0.0:8000
+    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    depends_on:
+      - mediamtx
+
+  mediamtx:
+    image: bluenviron/mediamtx:latest
+    container_name: mediamtx
+    restart: always
+    ports:
+      - "8554:8554"
+      - "8888:8888"
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+    command: /app/mediamtx.yml
