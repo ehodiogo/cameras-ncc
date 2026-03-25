@@ -15,7 +15,7 @@ from camera.funcs import verificar_espaco
 MOTION_FOLDER = os.path.join(settings.MEDIA_ROOT, "motion")
 
 VIDEO_WIDTH, VIDEO_HEIGHT = 1024, 768
-VIDEO_FPS = 15
+VIDEO_FPS = 30
 
 
 def open_camera(rtsp_url, nome):
