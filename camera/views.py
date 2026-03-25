@@ -72,7 +72,6 @@ def gen_frames(rtsp_url, camera_name):
 
             video_path = os.path.join(folder_path, f"{camera_name}_{timestamp}.mp4")
 
-            # Inicia FFmpeg para gravação
             cmd = [
                 "ffmpeg",
                 "-y",
@@ -81,7 +80,7 @@ def gen_frames(rtsp_url, camera_name):
                 "-pix_fmt", "bgr24",
                 "-s", f"{VIDEO_WIDTH}x{VIDEO_HEIGHT}",
                 "-r", str(VIDEO_FPS),
-                "-i", "-",  # input via stdin
+                "-i", "-",
                 "-c:v", "libx264",
                 "-preset", "ultrafast",
                 "-pix_fmt", "yuv420p",

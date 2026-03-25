@@ -5,6 +5,7 @@ import time
 from datetime import datetime
 from threading import Thread
 from django.conf import settings
+import subprocess
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'ncc.settings')
 django.setup()
@@ -77,23 +78,45 @@ def monitorar_camera(camera):
                 folder_path = os.path.join(MOTION_FOLDER, f"{now.year}", f"{now.month:02}", f"{now.day:02}")
                 os.makedirs(folder_path, exist_ok=True)
                 video_path = os.path.join(folder_path, f"{nome}_{timestamp}.mp4")
-                fourcc = cv2.VideoWriter_fourcc(*'MP4V')
-                out = cv2.VideoWriter(video_path, fourcc, VIDEO_FPS, (VIDEO_WIDTH, VIDEO_HEIGHT))
+                cmd = [
+                    "ffmpeg",
+                    "-y",
+                    "-f", "rawvideo",
+                    "-vcodec", "rawvideo",
+                    "-pix_fmt", "bgr24",
+                    "-s", f"{VIDEO_WIDTH}x{VIDEO_HEIGHT}",
+                    "-r", str(VIDEO_FPS),
+                    "-i", "-",
+                    "-c:v", "libx264",
+                    "-preset", "ultrafast",
+                    "-pix_fmt", "yuv420p",
+                    video_path
+                ]
+                ffmpeg_proc = subprocess.Popen(cmd, stdin=subprocess.PIPE)
 
             if recording:
                 frame_resized = cv2.resize(frame2, (VIDEO_WIDTH, VIDEO_HEIGHT))
-                out.write(frame_resized)
+                try:
+                    ffmpeg_proc.stdin.write(frame_resized.tobytes())
+                except BrokenPipeError:
+                    print(f"[{nome}] Erro ao escrever no FFmpeg")
+                    recording = False
+                    ffmpeg_proc = None
 
+                # Captura foto
                 if not photo_taken and time.time() - movement_time >= 0.5:
                     foto_path = os.path.join(folder_path, f"{nome}_{timestamp}.jpg")
                     cv2.imwrite(foto_path, frame2)
                     photo_taken = True
                     verificar_espaco()
 
+                # Para gravação após 20s
                 if time.time() - start_time >= 20:
                     recording = False
-                    out.release()
-                    out = None
+                    if ffmpeg_proc:
+                        ffmpeg_proc.stdin.close()
+                        ffmpeg_proc.wait()
+                        ffmpeg_proc = None
                     photo_taken = False
                     verificar_espaco()
 
