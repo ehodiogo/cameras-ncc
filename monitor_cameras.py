@@ -14,10 +14,9 @@ from camera.models import Camera
 from camera.funcs import verificar_espaco
 
 MOTION_FOLDER = os.path.join(settings.MEDIA_ROOT, "motion")
-
 VIDEO_WIDTH, VIDEO_HEIGHT = 1024, 768
 VIDEO_FPS = 30
-
+RECORD_DURATION = 20  # segundos
 
 def open_camera(rtsp_url, nome):
     cap = cv2.VideoCapture(rtsp_url, cv2.CAP_FFMPEG)
@@ -31,7 +30,6 @@ def open_camera(rtsp_url, nome):
         print(f"[{nome}] Câmera offline.")
         cap.release()
         return None, None
-
 
 def monitorar_camera(camera):
     nome = camera.nome.replace(" ", "_")
@@ -47,7 +45,7 @@ def monitorar_camera(camera):
         frame1_gray = cv2.GaussianBlur(frame1_gray, (15, 15), 0)
 
         recording = False
-        out = None
+        ffmpeg_proc = None
         start_time = None
         folder_path = None
         photo_taken = False
@@ -56,8 +54,14 @@ def monitorar_camera(camera):
             ret, frame2 = cap.read()
             if not ret:
                 print(f"[{nome}] Falha na leitura. Tentando reconectar...")
+                if ffmpeg_proc:
+                    ffmpeg_proc.stdin.close()
+                    ffmpeg_proc.wait()
+                    ffmpeg_proc = None
+                recording = False
                 cap.release()
                 break
+
             frame2_gray = cv2.cvtColor(frame2, cv2.COLOR_BGR2GRAY)
             frame2_gray = cv2.GaussianBlur(frame2_gray, (15, 15), 0)
             diff = cv2.absdiff(frame1_gray, frame2_gray)
@@ -78,6 +82,7 @@ def monitorar_camera(camera):
                 folder_path = os.path.join(MOTION_FOLDER, f"{now.year}", f"{now.month:02}", f"{now.day:02}")
                 os.makedirs(folder_path, exist_ok=True)
                 video_path = os.path.join(folder_path, f"{nome}_{timestamp}.mp4")
+
                 cmd = [
                     "ffmpeg",
                     "-y",
@@ -101,17 +106,18 @@ def monitorar_camera(camera):
                 except BrokenPipeError:
                     print(f"[{nome}] Erro ao escrever no FFmpeg")
                     recording = False
-                    ffmpeg_proc = None
+                    if ffmpeg_proc:
+                        ffmpeg_proc.stdin.close()
+                        ffmpeg_proc.wait()
+                        ffmpeg_proc = None
 
-                # Captura foto
                 if not photo_taken and time.time() - movement_time >= 0.5:
                     foto_path = os.path.join(folder_path, f"{nome}_{timestamp}.jpg")
                     cv2.imwrite(foto_path, frame2)
                     photo_taken = True
                     verificar_espaco()
 
-                # Para gravação após 20s
-                if time.time() - start_time >= 20:
+                if time.time() - start_time >= RECORD_DURATION:
                     recording = False
                     if ffmpeg_proc:
                         ffmpeg_proc.stdin.close()
@@ -124,7 +130,6 @@ def monitorar_camera(camera):
 
         time.sleep(5)
 
-
 def iniciar_monitoramento():
     cameras = Camera.objects.all()
     print(f"Iniciando monitoramento de {len(cameras)} câmeras...")
@@ -133,7 +138,6 @@ def iniciar_monitoramento():
 
     while True:
         time.sleep(60)
-
 
 if __name__ == "__main__":
     iniciar_monitoramento()
