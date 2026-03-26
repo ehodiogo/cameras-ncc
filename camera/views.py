@@ -9,6 +9,7 @@ from django.conf import settings
 from .funcs import verificar_espaco
 import subprocess
 import numpy as np
+from django.core.paginator import Paginator
 
 MOTION_FOLDER = os.path.join(settings.MEDIA_ROOT, "motion")
 
@@ -156,6 +157,15 @@ def listar_gravacoes(request):
     mes = request.GET.get("mes")
     dia = request.GET.get("dia")
     hoje = request.GET.get("hoje")
+    page_number = request.GET.get("page", 1)          # Página atual
+    page_size = request.GET.get("page_size", 20)     # Tamanho da página padrão 20
+
+    try:
+        page_size = int(page_size)
+        if page_size <= 0:
+            page_size = 20
+    except ValueError:
+        page_size = 20
 
     arquivos = []
 
@@ -189,4 +199,13 @@ def listar_gravacoes(request):
                     })
 
     arquivos.sort(key=lambda x: x['nome'].split('_')[-1].split('.')[0], reverse=True)
-    return render(request, "cameras/gravacoes.html", {"arquivos": arquivos, "MEDIA_URL": settings.MEDIA_URL})
+    paginator = Paginator(arquivos, page_size)
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, "cameras/gravacoes.html", {
+        "arquivos": page_obj, 
+        "MEDIA_URL": settings.MEDIA_URL,
+        "paginator": paginator,
+        "page_number": int(page_number),
+        "page_size": page_size
+    })

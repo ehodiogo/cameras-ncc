@@ -85,6 +85,51 @@
             </div>
         {% endfor %}
     </div>
+
+    {# Paginação #}
+    {% if arquivos.has_other_pages %}
+    <nav aria-label="Paginação">
+        <ul class="pagination justify-content-center mt-4">
+            {% if arquivos.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1&page_size={{ page_size }}&ano={{ request.GET.ano }}&mes={{ request.GET.mes }}&dia={{ request.GET.dia }}&hoje={{ request.GET.hoje|default:'' }}">« Primeira</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ arquivos.previous_page_number }}&page_size={{ page_size }}&ano={{ request.GET.ano }}&mes={{ request.GET.mes }}&dia={{ request.GET.dia }}&hoje={{ request.GET.hoje|default:'' }}">‹ Anterior</a>
+                </li>
+            {% else %}
+                <li class="page-item disabled"><span class="page-link">« Primeira</span></li>
+                <li class="page-item disabled"><span class="page-link">‹ Anterior</span></li>
+            {% endif %}
+
+            {# Mostra páginas em torno da atual (até 5) #}
+            {% for i in arquivos.paginator.page_range %}
+                {% if i >= arquivos.number|add:'-2' and i <= arquivos.number|add:'2' %}
+                    {% if i == arquivos.number %}
+                        <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+                    {% else %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ i }}&page_size={{ page_size }}&ano={{ request.GET.ano }}&mes={{ request.GET.mes }}&dia={{ request.GET.dia }}&hoje={{ request.GET.hoje|default:'' }}">{{ i }}</a>
+                        </li>
+                    {% endif %}
+                {% endif %}
+            {% endfor %}
+
+            {% if arquivos.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ arquivos.next_page_number }}&page_size={{ page_size }}&ano={{ request.GET.ano }}&mes={{ request.GET.mes }}&dia={{ request.GET.dia }}&hoje={{ request.GET.hoje|default:'' }}">Próxima ›</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ arquivos.paginator.num_pages }}&page_size={{ page_size }}&ano={{ request.GET.ano }}&mes={{ request.GET.mes }}&dia={{ request.GET.dia }}&hoje={{ request.GET.hoje|default:'' }}">Última »</a>
+                </li>
+            {% else %}
+                <li class="page-item disabled"><span class="page-link">Próxima ›</span></li>
+                <li class="page-item disabled"><span class="page-link">Última »</span></li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
