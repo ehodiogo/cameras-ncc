@@ -1,59 +1,141 @@
+<!DOCTYPE html>
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8">
-  <title>{{ camera.nome }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ camera.nome }} | NCC Monitoramento</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
   <style>
-    body { background-color: #f8f9fa; }
+    :root {
+      --bg-color: #0f172a;
+      --card-bg: #1e293b;
+      --border-color: #334155;
+      --accent-color: #3b82f6;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    body { 
+      background-color: var(--bg-color); 
+      color: var(--text-main);
+      font-family: 'Inter', sans-serif;
+    }
+
+    /* Navbar Personalizada */
+    .navbar {
+      background-color: var(--card-bg) !important;
+      border-bottom: 1px solid var(--border-color);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    .navbar-brand { font-weight: 700; letter-spacing: 0.5px; }
+    
+    /* Cartão Principal */
+    .camera-card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 1rem;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+    }
+    .card-header {
+      background-color: transparent;
+      border-bottom: 1px solid var(--border-color);
+      padding: 1.5rem;
+    }
+    .card-header h2 { font-weight: 600; font-size: 1.5rem; color: var(--text-main); }
+
+    /* Área do Vídeo */
     .camera-wrapper {
       position: relative;
       width: 100%;
-      max-width: 1024px;
+      max-width: 1000px;
       margin: 0 auto;
-      padding-top: 56.25%; /* 16:9 ratio */
+      padding-top: 56.25%; /* Ratio 16:9 */
       overflow: hidden;
       background-color: #000;
+      border-radius: 0.75rem;
+      border: 1px solid var(--border-color);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
       cursor: grab;
     }
+    .camera-wrapper:active { cursor: grabbing; }
+    
     .camera-wrapper img {
       position: absolute;
       top: 0; left: 0;
       width: 100%; height: 100%;
       object-fit: cover;
-      transition: transform 0.1s ease;
+      transition: transform 0.15s ease-out;
     }
-    .camera-wrapper .placeholder {
+
+    /* Tela de Carregamento (Placeholder) */
+    .camera-wrapper .placeholder-overlay {
       position: absolute;
       top: 0; left: 0; width: 100%; height: 100%;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
       background-color: #000;
-      color: #fff;
-      font-size: 2rem;
-      font-weight: bold;
-      animation: blink 1s infinite;
-      z-index: 1;
+      color: var(--text-muted);
+      z-index: 10;
     }
-    @keyframes blink { 0%,50%,100% {opacity:1;} 25%,75% {opacity:0.2;} }
-    .controls { margin-top: 15px; }
+    .placeholder-overlay i { font-size: 3rem; margin-bottom: 10px; color: var(--border-color); }
+    .placeholder-overlay p { font-size: 1.1rem; font-weight: 500; margin-top: 15px; }
+    
+    /* Controles */
+    .controls-bar {
+      margin-top: 2rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border-color);
+    }
+    .btn-custom {
+      border-radius: 50px;
+      padding: 0.5rem 1.2rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+    }
+    .btn-custom:hover { transform: translateY(-2px); }
+    
+    .address-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background-color: rgba(59, 130, 246, 0.1);
+      color: var(--accent-color);
+      padding: 0.4rem 1rem;
+      border-radius: 50px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      margin-bottom: 1.5rem;
+    }
   </style>
 </head>
 <body>
 
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+<nav class="navbar navbar-expand-lg navbar-dark">
   <div class="container">
-    <a class="navbar-brand" href="{% url 'painel_cameras' %}">NCC Câmeras</a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+    <a class="navbar-brand" href="{% url 'painel_cameras' %}">
+      <i class="bi bi-shield-check text-primary me-2"></i>NCC Câmeras
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
       <span class="navbar-toggler-icon"></span>
     </button>
     <div class="collapse navbar-collapse" id="navbarNav">
       <ul class="navbar-nav ms-auto">
         <li class="nav-item">
-          <a class="nav-link active" aria-current="page" href="{% url 'painel_cameras' %}">Dashboard de Câmeras</a>
+          <a class="nav-link active" href="{% url 'painel_cameras' %}"><i class="bi bi-grid-1x2-fill me-1"></i> Dashboard</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="{% url 'listar_gravacoes' %}">Gravações</a>
+          <a class="nav-link" href="{% url 'listar_gravacoes' %}"><i class="bi bi-camera-reels me-1"></i> Gravações</a>
         </li>
       </ul>
     </div>
@@ -61,45 +143,74 @@
 </nav>
 
 <div class="container my-5">
-  <div class="card shadow-lg border-0">
-    <div class="card-header text-center bg-primary text-white">
-      <h2 class="mb-0">📡 {{ camera.nome }}</h2>
+  <div class="card camera-card border-0">
+    <div class="card-header text-center d-flex justify-content-between align-items-center">
+      <h2 class="mb-0 d-flex align-items-center gap-2">
+        <i class="bi bi-broadcast text-danger" style="animation: pulse 2s infinite;"></i> 
+        {{ camera.nome }}
+      </h2>
+      <span class="badge bg-success px-3 py-2 rounded-pill"><i class="bi bi-circle-fill small me-1"></i> Online</span>
     </div>
-    <div class="card-body text-center">
+    
+    <div class="card-body text-center p-4">
       {% if camera.endereco %}
-        <p class="text-muted"><strong>Endereço:</strong> {{ camera.endereco }}</p>
+        <div class="address-badge">
+          <i class="bi bi-geo-alt"></i> {{ camera.endereco }}
+        </div>
       {% endif %}
 
       <div class="camera-wrapper" id="camera-wrapper">
-        <div class="placeholder">Câmeras do NCC</div>
+        <div class="placeholder-overlay" id="placeholder">
+          <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"></div>
+          <p>Conectando ao sinal do NCC...</p>
+        </div>
         <img src="{% url 'camera_feed' camera.id %}" id="camera-feed"
              onerror="showPlaceholder(this)" onload="hidePlaceholder(this)"
-             alt="Câmera {{ camera.nome }}">
+             alt="Câmera {{ camera.nome }}" style="display: none;">
       </div>
 
-      <div class="controls d-flex justify-content-center gap-2">
-        <button class="btn btn-outline-secondary" onclick="refreshCamera()">🔄 Atualizar</button>
-        <button class="btn btn-outline-secondary" onclick="zoomIn()">➕ Zoom</button>
-        <button class="btn btn-outline-secondary" onclick="zoomOut()">➖ Reset Zoom</button>
-        <a href="{% url 'painel_cameras' %}" class="btn btn-outline-primary">⬅ Voltar</a>
+      <div class="controls-bar d-flex justify-content-center flex-wrap gap-3">
+        <button class="btn btn-outline-light btn-custom" onclick="refreshCamera()">
+          <i class="bi bi-arrow-clockwise"></i> Atualizar
+        </button>
+        <div class="btn-group shadow-sm" role="group">
+          <button class="btn btn-outline-light btn-custom rounded-start-pill" onclick="zoomIn()">
+            <i class="bi bi-zoom-in"></i> Zoom
+          </button>
+          <button class="btn btn-outline-light btn-custom rounded-end-pill" onclick="zoomOut()">
+            <i class="bi bi-aspect-ratio"></i> Reset
+          </button>
+        </div>
+        <a href="{% url 'painel_cameras' %}" class="btn btn-primary btn-custom">
+          <i class="bi bi-arrow-left"></i> Voltar ao Painel
+        </a>
       </div>
     </div>
   </div>
 </div>
 
+<style>
+  @keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.4; }
+    100% { opacity: 1; }
+  }
+</style>
+
 <script>
 const img = document.getElementById('camera-feed');
-const placeholder = document.querySelector('.placeholder');
+const placeholder = document.getElementById('placeholder');
 let scale = 1;
 let translateX = 0;
 let translateY = 0;
 
-function showPlaceholder(img) {
-    img.style.display = 'none';
+function showPlaceholder(imgElement) {
+    imgElement.style.display = 'none';
     placeholder.style.display = 'flex';
 }
-function hidePlaceholder(img) {
-    img.style.display = 'block';
+
+function hidePlaceholder(imgElement) {
+    imgElement.style.display = 'block';
     placeholder.style.display = 'none';
 }
 
@@ -107,19 +218,21 @@ function zoomIn() {
     scale += 0.2;
     updateTransform();
 }
+
 function zoomOut() {
     scale = 1;
     translateX = 0;
     translateY = 0;
     updateTransform();
 }
+
 function updateTransform() {
     img.style.transform = `scale(${scale}) translate(${translateX}px, ${translateY}px)`;
 }
 
 function refreshCamera() {
-    placeholder.style.display = 'flex';
-    img.src = img.src.split('?')[0] + '?t=' + new Date().getTime();
+    showPlaceholder(img);
+    img.src = img.src.split('?') + '?t=' + new Date().getTime();
 }
 
 const wrapper = document.getElementById('camera-wrapper');
@@ -131,7 +244,6 @@ wrapper.addEventListener('mousedown', e => {
     isDragging = true;
     startX = e.clientX - translateX;
     startY = e.clientY - translateY;
-    wrapper.style.cursor = 'grabbing';
 });
 
 wrapper.addEventListener('mousemove', e => {
@@ -141,15 +253,26 @@ wrapper.addEventListener('mousemove', e => {
     updateTransform();
 });
 
-wrapper.addEventListener('mouseup', () => {
-    isDragging = false;
-    wrapper.style.cursor = 'grab';
+wrapper.addEventListener('mouseup', () => { isDragging = false; });
+wrapper.addEventListener('mouseleave', () => { isDragging = false; });
+
+// Suporte a toque (Mobile Panning)
+wrapper.addEventListener('touchstart', e => {
+    if (scale <= 1) return;
+    isDragging = true;
+    startX = e.touches.clientX - translateX;
+    startY = e.touches.clientY - translateY;
 });
 
-wrapper.addEventListener('mouseleave', () => {
-    isDragging = false;
-    wrapper.style.cursor = 'grab';
+wrapper.addEventListener('touchmove', e => {
+    if (!isDragging) return;
+    e.preventDefault(); // Evita scroll da página enquanto move a câmera
+    translateX = e.touches.clientX - startX;
+    translateY = e.touches.clientY - startY;
+    updateTransform();
 });
+
+wrapper.addEventListener('touchend', () => { isDragging = false; });
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

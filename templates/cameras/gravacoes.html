@@ -1,157 +1,335 @@
 {% load custom_filters %}
-
+<!DOCTYPE html>
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Gravações</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gravações | NCC Monitoramento</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --accent-color: #2563eb;
+            --filter-bg: #f8fafc; /* Cor clara para o filtro */
+        }
+
+        body { 
+            background-color: var(--bg-color); 
+            color: #f8fafc;
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* --- FILTRO COM ALTA VISIBILIDADE --- */
+        .filter-section {
+            background-color: var(--filter-bg);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 40px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+            border: 2px solid var(--accent-color);
+        }
+        
+        .filter-section label {
+            color: #1e293b; /* Texto escuro no fundo claro */
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            margin-bottom: 8px;
+        }
+
+        .filter-section .form-control {
+            background-color: #ffffff !important;
+            border: 2px solid #cbd5e1;
+            color: #1e293b !important;
+            font-weight: 600;
+        }
+
+        .filter-section .form-check-label {
+            color: #1e293b;
+            font-weight: 600;
+        }
+
+        /* --- CARDS DA GALERIA --- */
+        .media-card {
+            background-color: var(--card-bg);
+            border: 1px solid #334155;
+            border-radius: 12px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .media-card:hover {
+            transform: translateY(-8px);
+            border-color: var(--accent-color);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+        }
+        
+        .media-container {
+            position: relative;
+            background: #000;
+            aspect-ratio: 16/9;
+            overflow: hidden;
+        }
+        
+        .media-container video, .media-container img {
+            width: 100%; height: 100%; object-fit: cover;
+        }
+
+        /* --- MODAL E ZOOM --- */
+        .modal-content { background-color: #000; border: none; }
+        
+        .zoom-view-viewport {
+            width: 100%;
+            height: 75vh;
+            overflow: hidden;
+            position: relative;
+            background-color: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .zoom-element {
+            max-width: 100%;
+            max-height: 100%;
+            transition: transform 0.1s ease-out;
+            cursor: grab;
+            z-index: 1;
+        }
+        .zoom-element:active { cursor: grabbing; }
+
+        /* Controles flutuantes de zoom */
+        .focus-controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .btn-zoom {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            width: 45px;
+            height: 45px;
+            border-radius: 10px;
+            backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+        .btn-zoom:hover { background: var(--accent-color); }
+
+        .type-badge {
+            position: absolute;
+            top: 10px; right: 10px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 800;
+            z-index: 10;
+        }
+    </style>
 </head>
 <body>
 
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+<nav class="navbar navbar-expand-lg navbar-dark">
   <div class="container">
-    <a class="navbar-brand" href="{% url 'painel_cameras' %}">NCC Câmeras</a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+    <a class="navbar-brand" href="{% url 'painel_cameras' %}">
+      <i class="bi bi-shield-check text-primary me-2"></i>NCC Câmeras
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
       <span class="navbar-toggler-icon"></span>
     </button>
     <div class="collapse navbar-collapse" id="navbarNav">
       <ul class="navbar-nav ms-auto">
         <li class="nav-item">
-          <a class="nav-link active" aria-current="page" href="{% url 'painel_cameras' %}">Dashboard de Câmeras</a>
+          <a class="nav-link active" href="{% url 'painel_cameras' %}"><i class="bi bi-grid-1x2-fill me-1"></i> Dashboard</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="{% url 'listar_gravacoes' %}">Gravações</a>
+          <a class="nav-link" href="{% url 'listar_gravacoes' %}"><i class="bi bi-camera-reels me-1"></i> Gravações</a>
         </li>
       </ul>
     </div>
   </div>
 </nav>
 
-<div class="container my-4">
-    <h1 class="mb-4 text-center">📹 Gravações</h1>
+<div class="container my-5">
+    <header class="text-center mb-5">
+        <h1 class="display-6 fw-bold text-white">Histórico de Gravações</h1>
+        <p class="text-muted">Clique em um arquivo para focar e dar zoom.</p>
+    </header>
 
-    <form method="get" class="row g-3 mb-4 justify-content-center" onsubmit="prepararData()">
-        <div class="col-md-4">
-            <label for="data" class="form-label">Escolha uma data</label>
-            <input
-                type="text"
-                class="form-control"
-                id="data"
-                name="data"
-                value="{{ request.GET.data|default:'' }}"
-                placeholder="dd/mm/yyyy">
-        </div>
-
-        <input type="hidden" id="ano" name="ano" value="{{ request.GET.ano|default:'' }}">
-        <input type="hidden" id="mes" name="mes" value="{{ request.GET.mes|default:'' }}">
-        <input type="hidden" id="dia" name="dia" value="{{ request.GET.dia|default:'' }}">
-
-        <div class="col-md-2 d-flex align-items-end">
-            <div class="form-check">
-                <input class="form-check-input" type="checkbox" id="hoje" name="hoje" value="1" {% if request.GET.hoje %}checked{% endif %}>
-                <label class="form-check-label" for="hoje">
-                    Hoje
-                </label>
+    <div class="filter-section shadow-lg">
+        <form method="get" class="row g-3 align-items-end justify-content-center" onsubmit="prepararData()">
+            <div class="col-md-4">
+                <label for="data">Selecione a Data do Registro</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-calendar-event text-primary"></i></span>
+                    <input type="text" class="form-control border-start-0" id="data" name="data" value="{{ request.GET.data|default:'' }}" placeholder="dd/mm/aaaa">
+                </div>
             </div>
-        </div>
-        <div class="col-md-2 d-flex align-items-end">
-            <button type="submit" class="btn btn-primary w-100">Filtrar</button>
-        </div>
-    </form>
 
-    <div class="row">
+            <input type="hidden" id="ano" name="ano" value="{{ request.GET.ano|default:'' }}">
+            <input type="hidden" id="mes" name="mes" value="{{ request.GET.mes|default:'' }}">
+            <input type="hidden" id="dia" name="dia" value="{{ request.GET.dia|default:'' }}">
+
+            <div class="col-md-3 text-center py-2">
+                <div class="form-check form-switch d-inline-block">
+                    <input class="form-check-input" type="checkbox" id="hoje" name="hoje" value="1" {% if request.GET.hoje %}checked{% endif %}>
+                    <label class="form-check-label" for="hoje">Filtrar apenas Hoje</label>
+                </div>
+            </div>
+            
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100 fw-bold py-2 shadow-sm">
+                    <i class="bi bi-funnel-fill me-2"></i>APLICAR
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="row g-4">
         {% for arq in arquivos %}
-            <div class="col-md-4 mb-4">
-                <div class="card shadow-sm h-100">
-                    {% if arq.nome|endswith:".mp4" %}
-                        <video class="card-img-top" controls preload="metadata">
-                            <source src="{{ MEDIA_URL }}{{ arq.caminho }}" type="video/mp4">
-                            Seu navegador não suporta vídeo.
-                        </video>
-                    {% else %}
-                        <img src="{{ MEDIA_URL }}{{ arq.caminho }}" class="card-img-top" alt="Gravação">
-                    {% endif %}
-                    <div class="card-body text-center">
-                        <p class="card-text fw-bold">{{ arq.nome }}</p>
+            <div class="col-sm-6 col-lg-4 col-xl-3">
+                <div class="media-card h-100" onclick="abrirFoco('{{ MEDIA_URL }}{{ arq.caminho }}', '{{ arq.nome }}')">
+                    <div class="media-container">
+                        {% if arq.nome|endswith:".mp4" %}
+                            <video muted preload="metadata"><source src="{{ MEDIA_URL }}{{ arq.caminho }}" type="video/mp4"></video>
+                            <span class="type-badge bg-primary">VIDEO</span>
+                        {% else %}
+                            <img src="{{ MEDIA_URL }}{{ arq.caminho }}" alt="Captura">
+                            <span class="type-badge bg-secondary">IMAGEM</span>
+                        {% endif %}
+                    </div>
+                    <div class="card-body p-3 text-center border-top border-secondary">
+                        <small class="text-white opacity-75 d-block text-truncate">{{ arq.nome }}</small>
                     </div>
                 </div>
             </div>
         {% empty %}
-            <div class="col-12">
-                <div class="alert alert-warning text-center">
-                    Nenhuma gravação encontrada 🚫
-                </div>
+            <div class="col-12 text-center py-5">
+                <i class="bi bi-camera-video-off display-1 opacity-25"></i>
+                <p class="mt-3 text-muted">Nenhuma gravação encontrada para esta data.</p>
             </div>
         {% endfor %}
     </div>
+</div>
 
-    {# Paginação #}
-    {% if arquivos.has_other_pages %}
-    <nav aria-label="Paginação">
-        <ul class="pagination justify-content-center mt-4">
-            {% if arquivos.has_previous %}
-                <li class="page-item">
-                    <a class="page-link" href="?page=1&page_size={{ page_size }}&ano={{ request.GET.ano }}&mes={{ request.GET.mes }}&dia={{ request.GET.dia }}&hoje={{ request.GET.hoje|default:'' }}">« Primeira</a>
-                </li>
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ arquivos.previous_page_number }}&page_size={{ page_size }}&ano={{ request.GET.ano }}&mes={{ request.GET.mes }}&dia={{ request.GET.dia }}&hoje={{ request.GET.hoje|default:'' }}">‹ Anterior</a>
-                </li>
-            {% else %}
-                <li class="page-item disabled"><span class="page-link">« Primeira</span></li>
-                <li class="page-item disabled"><span class="page-link">‹ Anterior</span></li>
-            {% endif %}
+<div class="modal fade" id="focusModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content shadow-lg">
+            <div class="modal-header border-0 bg-dark py-2">
+                <span class="modal-title text-white small" id="focusModalLabel"></span>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0 position-relative">
+                
+                <div class="zoom-view-viewport" id="zoomViewport">
+                    <div class="focus-controls">
+                        <button class="btn-zoom" onclick="ajustarZoom(0.3)" title="Zoom In"><i class="bi bi-plus-lg"></i></button>
+                        <button class="btn-zoom" onclick="resetarZoom()" title="Resetar"><i class="bi bi-arrow-counterclockwise"></i></button>
+                        <button class="btn-zoom" onclick="ajustarZoom(-0.3)" title="Zoom Out"><i class="bi bi-dash-lg"></i></button>
+                    </div>
 
-            {# Mostra páginas em torno da atual (até 5) #}
-            {% for i in arquivos.paginator.page_range %}
-                {% if i >= arquivos.number|add:'-2' and i <= arquivos.number|add:'2' %}
-                    {% if i == arquivos.number %}
-                        <li class="page-item active"><span class="page-link">{{ i }}</span></li>
-                    {% else %}
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ i }}&page_size={{ page_size }}&ano={{ request.GET.ano }}&mes={{ request.GET.mes }}&dia={{ request.GET.dia }}&hoje={{ request.GET.hoje|default:'' }}">{{ i }}</a>
-                        </li>
-                    {% endif %}
-                {% endif %}
-            {% endfor %}
+                    <div id="mediaWrapper" class="w-100 h-100 d-flex align-items-center justify-content-center">
+                        </div>
+                </div>
 
-            {% if arquivos.has_next %}
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ arquivos.next_page_number }}&page_size={{ page_size }}&ano={{ request.GET.ano }}&mes={{ request.GET.mes }}&dia={{ request.GET.dia }}&hoje={{ request.GET.hoje|default:'' }}">Próxima ›</a>
-                </li>
-                <li class="page-item">
-                    <a class="page-link" href="?page={{ arquivos.paginator.num_pages }}&page_size={{ page_size }}&ano={{ request.GET.ano }}&mes={{ request.GET.mes }}&dia={{ request.GET.dia }}&hoje={{ request.GET.hoje|default:'' }}">Última »</a>
-                </li>
-            {% else %}
-                <li class="page-item disabled"><span class="page-link">Próxima ›</span></li>
-                <li class="page-item disabled"><span class="page-link">Última »</span></li>
-            {% endif %}
-        </ul>
-    </nav>
-    {% endif %}
-
+            </div>
+        </div>
+    </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/pt.js"></script>
+
 <script>
-    flatpickr("#data", {
-        dateFormat: "d/m/Y",
-        locale: "pt"
-    });
+    flatpickr("#data", { dateFormat: "d/m/Y", locale: "pt", allowInput: true });
 
     function prepararData() {
-        const dataInput = document.getElementById("data").value;
-        if (dataInput) {
-            const partes = dataInput.split("/");
-            if (partes.length === 3) {
-                document.getElementById("dia").value = partes[0];
-                document.getElementById("mes").value = partes[1];
-                document.getElementById("ano").value = partes[2];
+        const val = document.getElementById("data").value;
+        if (val) {
+            const p = val.split("/");
+            if (p.length === 3) {
+                document.getElementById("dia").value = p;
+                document.getElementById("mes").value = p;
+                document.getElementById("ano").value = p;
             }
         }
     }
+
+    // --- LÓGICA DE FOCO E ZOOM ---
+    let scale = 1, posX = 0, posY = 0;
+    let isDragging = false, startX, startY;
+    const modal = new bootstrap.Modal(document.getElementById('focusModal'));
+    const wrapper = document.getElementById('mediaWrapper');
+
+    function abrirFoco(url, nome) {
+        document.getElementById('focusModalLabel').innerText = nome;
+        wrapper.innerHTML = '';
+        resetarZoom();
+
+        if (url.toLowerCase().endsWith('.mp4')) {
+            wrapper.innerHTML = `<video id="zoomTarget" class="zoom-element" controls autoplay><source src="${url}" type="video/mp4"></video>`;
+        } else {
+            wrapper.innerHTML = `<img id="zoomTarget" src="${url}" class="zoom-element">`;
+        }
+        modal.show();
+    }
+
+    function ajustarZoom(delta) {
+        scale = Math.max(1, scale + delta);
+        aplicarTransform();
+    }
+
+    function resetarZoom() {
+        scale = 1; posX = 0; posY = 0;
+        aplicarTransform();
+    }
+
+    function aplicarTransform() {
+        const el = document.getElementById('zoomTarget');
+        if (el) el.style.transform = `scale(${scale}) translate(${posX}px, ${posY}px)`;
+    }
+
+    // Zoom com o Scroll do Mouse
+    document.getElementById('zoomViewport').addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const delta = e.deltaY > 0 ? -0.2 : 0.2;
+        ajustarZoom(delta);
+    });
+
+    // Arrasto (Pan)
+    document.getElementById('zoomViewport').addEventListener('mousedown', (e) => {
+        if (scale <= 1 || e.target.tagName === 'VIDEO') return; // Não arrasta se clicar nos controles do video
+        isDragging = true;
+        startX = e.clientX - posX;
+        startY = e.clientY - posY;
+    });
+
+    window.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        posX = e.clientX - startX;
+        posY = e.clientY - startY;
+        aplicarTransform();
+    });
+
+    window.addEventListener('mouseup', () => isDragging = false);
+
 </script>
 
 </body>
