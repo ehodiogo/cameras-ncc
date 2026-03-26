@@ -10,6 +10,8 @@ from .funcs import verificar_espaco
 import subprocess
 import numpy as np
 from django.core.paginator import Paginator
+from datetime import datetime
+from collections import Counter
 
 MOTION_FOLDER = os.path.join(settings.MEDIA_ROOT, "motion")
 
@@ -208,4 +210,57 @@ def listar_gravacoes(request):
         "paginator": paginator,
         "page_number": int(page_number),
         "page_size": page_size
+    })
+
+def dashboard(request):
+
+    now = datetime.now()
+    base_path = os.path.join(
+        MOTION_FOLDER,
+        str(now.year),
+        f"{now.month:02}",
+        f"{now.day:02}"
+    )
+
+    arquivos = []
+
+    if os.path.exists(base_path):
+        for f in os.listdir(base_path):
+            if f.endswith(".mp4") or f.endswith(".jpg"):
+                arquivos.append(f)
+
+    horas = []
+    cameras = []
+    timeline = []
+
+    for nome in arquivos:
+        partes = nome.split("_")
+
+        if len(partes) >= 2:
+            camera = partes[0]
+            tempo = partes[-1].split(".")[0]
+
+            h, m, s = tempo.split("-")
+
+            horas.append(h)
+            cameras.append(camera)
+
+            segundos = int(h)*3600 + int(m)*60 + int(s)
+
+            timeline.append({
+                "segundos": segundos,
+                "nome": nome
+            })
+
+    stats = {
+        "total": len(arquivos),
+        "por_hora": dict(Counter(horas)),
+        "por_camera": dict(Counter(cameras)),
+    }
+
+    return render(request, "cameras/dashboard.html", {
+        "stats": stats,
+        "timeline": timeline,
+        "MEDIA_URL": settings.MEDIA_URL,
+        "base_path": f"motion/{now.year}/{now.month:02}/{now.day:02}/"
     })
