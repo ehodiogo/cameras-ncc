@@ -18,11 +18,11 @@
             --bg-color: #0f172a;
             --card-bg: #1e293b;
             --accent-color: #2563eb;
-            --filter-bg: #f8fafc; /* Cor clara para o filtro */
+            --filter-bg: #f8fafc;
         }
 
-        body { 
-            background-color: var(--bg-color); 
+        body {
+            background-color: var(--bg-color);
             color: #f8fafc;
             font-family: 'Inter', sans-serif;
         }
@@ -36,9 +36,9 @@
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
             border: 2px solid var(--accent-color);
         }
-        
+
         .filter-section label {
-            color: #1e293b; /* Texto escuro no fundo claro */
+            color: #1e293b;
             font-weight: 700;
             text-transform: uppercase;
             font-size: 0.75rem;
@@ -71,21 +71,21 @@
             border-color: var(--accent-color);
             box-shadow: 0 10px 20px rgba(0,0,0,0.4);
         }
-        
+
         .media-container {
             position: relative;
             background: #000;
             aspect-ratio: 16/9;
             overflow: hidden;
         }
-        
+
         .media-container video, .media-container img {
             width: 100%; height: 100%; object-fit: cover;
         }
 
         /* --- MODAL E ZOOM --- */
         .modal-content { background-color: #000; border: none; }
-        
+
         .zoom-view-viewport {
             width: 100%;
             height: 75vh;
@@ -116,7 +116,7 @@
             flex-direction: column;
             gap: 10px;
         }
-        
+
         .btn-zoom {
             background: rgba(255, 255, 255, 0.2);
             border: 1px solid rgba(255,255,255,0.3);
@@ -140,6 +140,34 @@
             font-size: 0.7rem;
             font-weight: 800;
             z-index: 10;
+        }
+
+        /* --- PAGINAÇÃO CUSTOMIZADA --- */
+        .custom-pagination .page-link {
+            background-color: var(--card-bg);
+            border-color: #334155;
+            color: #f8fafc;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .custom-pagination .page-link:hover {
+            background-color: #334155;
+            border-color: var(--accent-color);
+            color: #ffffff;
+        }
+
+        .custom-pagination .page-item.active .page-link {
+            background-color: var(--accent-color);
+            border-color: var(--accent-color);
+            color: #ffffff;
+            font-weight: 700;
+        }
+
+        .custom-pagination .page-item.disabled .page-link {
+            background-color: #0f172a;
+            color: #64748b;
+            border-color: #334155;
         }
     </style>
 </head>
@@ -195,7 +223,7 @@
                     <label class="form-check-label" for="hoje">Filtrar apenas Hoje</label>
                 </div>
             </div>
-            
+
             <div class="col-md-2">
                 <button type="submit" class="btn btn-primary w-100 fw-bold py-2 shadow-sm">
                     <i class="bi bi-funnel-fill me-2"></i>APLICAR
@@ -229,7 +257,51 @@
             </div>
         {% endfor %}
     </div>
-</div>
+
+    {% if arquivos.has_other_pages %}
+    <nav aria-label="Navegação das gravações" class="mt-5">
+        <ul class="pagination justify-content-center custom-pagination">
+
+            {% if arquivos.has_previous %}
+                <li class="page-item">
+                    <a class="page-link shadow-sm" href="?page={{ arquivos.previous_page_number }}{% if request.GET.data %}&data={{ request.GET.data }}{% endif %}{% if request.GET.hoje %}&hoje={{ request.GET.hoje }}{% endif %}" aria-label="Anterior">
+                        <span aria-hidden="true">&laquo; Anterior</span>
+                    </a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link shadow-sm">&laquo; Anterior</span>
+                </li>
+            {% endif %}
+
+            {% for num in arquivos.paginator.page_range %}
+                {% if arquivos.number == num %}
+                    <li class="page-item active" aria-current="page">
+                        <span class="page-link shadow-sm">{{ num }}</span>
+                    </li>
+                {% elif num > arquivos.number|add:'-3' and num < arquivos.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link shadow-sm" href="?page={{ num }}{% if request.GET.data %}&data={{ request.GET.data }}{% endif %}{% if request.GET.hoje %}&hoje={{ request.GET.hoje }}{% endif %}">{{ num }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+
+            {% if arquivos.has_next %}
+                <li class="page-item">
+                    <a class="page-link shadow-sm" href="?page={{ arquivos.next_page_number }}{% if request.GET.data %}&data={{ request.GET.data }}{% endif %}{% if request.GET.hoje %}&hoje={{ request.GET.hoje }}{% endif %}" aria-label="Próxima">
+                        <span aria-hidden="true">Próxima &raquo;</span>
+                    </a>
+                </li>
+            {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link shadow-sm">Próxima &raquo;</span>
+                </li>
+            {% endif %}
+
+        </ul>
+    </nav>
+    {% endif %}
+    </div>
 
 <div class="modal fade" id="focusModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered">
@@ -239,7 +311,7 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-0 position-relative">
-                
+
                 <div class="zoom-view-viewport" id="zoomViewport">
                     <div class="focus-controls">
                         <button class="btn-zoom" onclick="ajustarZoom(0.3)" title="Zoom In"><i class="bi bi-plus-lg"></i></button>
@@ -268,9 +340,9 @@
         if (val) {
             const p = val.split("/");
             if (p.length === 3) {
-                document.getElementById("dia").value = p;
-                document.getElementById("mes").value = p;
-                document.getElementById("ano").value = p;
+                document.getElementById("dia").value = p[0];
+                document.getElementById("mes").value = p[1];
+                document.getElementById("ano").value = p[2];
             }
         }
     }
