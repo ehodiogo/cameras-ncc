@@ -1,0 +1,16 @@
+.git
+.gitignore
+__pycache__
+*.pyc
+*.log
+*.mp4
+*.avi
+*.mkv
+data/
+videos/
+recordings/
+tmp/
+cache/
+node_modules/
+media/
+.env
