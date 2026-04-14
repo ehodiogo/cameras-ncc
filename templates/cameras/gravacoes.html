@@ -142,6 +142,24 @@
             z-index: 10;
         }
 
+        .date-badge {
+            position: absolute;
+            top: 10px; 
+            left: 10px; /* Posicionado à esquerda para equilibrar com a tag de tipo */
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            z-index: 10;
+            background: rgba(15, 23, 42, 0.85); /* Fundo escuro translúcido para leitura fácil */
+            color: #f8fafc;
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
         /* --- PAGINAÇÃO CUSTOMIZADA --- */
         .custom-pagination .page-link {
             background-color: var(--card-bg);
@@ -237,6 +255,14 @@
             <div class="col-sm-6 col-lg-4 col-xl-3">
                 <div class="media-card h-100" onclick="abrirFoco('{{ MEDIA_URL }}{{ arq.caminho }}', '{{ arq.nome }}')">
                     <div class="media-container">
+                        
+                        {% if arq.data %}
+                        <span class="date-badge">
+                            <i class="bi bi-calendar3"></i> 
+                            {{ arq.data }} {% if arq.hora %} às {{ arq.hora }}{% endif %}
+                        </span>
+                        {% endif %}
+
                         {% if arq.nome|endswith:".mp4" %}
                             <video muted preload="metadata"><source src="{{ MEDIA_URL }}{{ arq.caminho }}" type="video/mp4"></video>
                             <span class="type-badge bg-primary">VIDEO</span>
